@@ -133,7 +133,8 @@ func queryVersion() (string, error) {
 }
 
 func queryClOrdID() field.ClOrdIDField {
-	return field.NewClOrdID(queryString("ClOrdID"))
+	//return field.NewClOrdID(queryString("ClOrdID"))
+	return field.NewClOrdID("1")
 }
 
 func queryOrigClOrdID() field.OrigClOrdIDField {
@@ -141,77 +142,102 @@ func queryOrigClOrdID() field.OrigClOrdIDField {
 }
 
 func querySymbol() field.SymbolField {
-	return field.NewSymbol(queryString("Symbol"))
+	//return field.NewSymbol(queryString("Symbol"))
+	return field.NewSymbol("APPL")
 }
 
-func querySide() field.SideField {
-	choices := []string{
-		"Buy",
-		"Sell",
-		"Sell Short",
-		"Sell Short Exempt",
-		"Cross",
-		"Cross Short",
-		"Cross Short Exempt",
-	}
+func querySide(bs bool) field.SideField {
+	/*
+		choices := []string{
+			"Buy",
+			"Sell",
+			"Sell Short",
+			"Sell Short Exempt",
+			"Cross",
+			"Cross Short",
+			"Cross Short Exempt",
+		}
 
-	values := []string{
-		string(enum.Side_BUY),
-		string(enum.Side_SELL),
-		string(enum.Side_SELL_SHORT),
-		string(enum.Side_SELL_SHORT_EXEMPT),
-		string(enum.Side_CROSS),
-		string(enum.Side_CROSS_SHORT),
-		"A",
-	}
+		values := []string{s
+			string(enum.Side_BUY),
+			string(enum.Side_SELL),
+			string(enum.Side_SELL_SHORT),
+			string(enum.Side_SELL_SHORT_EXEMPT),
+			string(enum.Side_CROSS),
+			string(enum.Side_CROSS_SHORT),
+			"A",
+		}
 
-	return field.NewSide(enum.Side(queryFieldChoices("Side", choices, values)))
+		return field.NewSide(enum.Side(queryFieldChoices("Side", choices, values)))
+	*/
+	if bs {
+		return field.NewSide(enum.Side(string(enum.Side_BUY)))
+	} else {
+		return field.NewSide(enum.Side(string(enum.Side_SELL)))
+	}
 }
 
 func queryOrdType(f *field.OrdTypeField) field.OrdTypeField {
-	choices := []string{
-		"Market",
-		"Limit",
-		"Stop",
-		"Stop Limit",
-	}
+	/*
+		choices := []string{
+			"Market",
+			"Limit",
+			"Stop",
+			"Stop Limit",
+		}
 
-	values := []string{
-		string(enum.OrdType_MARKET),
-		string(enum.OrdType_LIMIT),
-		string(enum.OrdType_STOP),
-		string(enum.OrdType_STOP_LIMIT),
-	}
+		values := []string{
+			string(enum.OrdType_MARKET),
+			string(enum.OrdType_LIMIT),
+			string(enum.OrdType_STOP),
+			string(enum.OrdType_STOP_LIMIT),
+		}
 
-	f.FIXString = quickfix.FIXString(queryFieldChoices("OrdType", choices, values))
+		f.FIXString = quickfix.FIXString(queryFieldChoices("OrdType", choices, values))
+		return *f
+	*/
+	f.FIXString = quickfix.FIXString(string(enum.OrdType_LIMIT))
 	return *f
 }
 
 func queryTimeInForce() field.TimeInForceField {
-	choices := []string{
-		"Day",
-		"IOC",
-		"OPG",
-		"GTC",
-		"GTX",
-	}
-	values := []string{
-		string(enum.TimeInForce_DAY),
-		string(enum.TimeInForce_IMMEDIATE_OR_CANCEL),
-		string(enum.TimeInForce_AT_THE_OPENING),
-		string(enum.TimeInForce_GOOD_TILL_CANCEL),
-		string(enum.TimeInForce_GOOD_TILL_CROSSING),
-	}
+	/*
+		choices := []string{
+			"Day",
+			"IOC",
+			"OPG",
+			"GTC",
+			"GTX",
+		}
+		values := []string{
+			string(enum.TimeInForce_DAY),
+			string(enum.TimeInForce_IMMEDIATE_OR_CANCEL),
+			string(enum.TimeInForce_AT_THE_OPENING),
+			string(enum.TimeInForce_GOOD_TILL_CANCEL),
+			string(enum.TimeInForce_GOOD_TILL_CROSSING),
+		}
+	*/
 
-	return field.NewTimeInForce(enum.TimeInForce(queryFieldChoices("TimeInForce", choices, values)))
+	//return field.NewTimeInForce(enum.TimeInForce(queryFieldChoices("TimeInForce", choices, values)))
+	return field.NewTimeInForce(enum.TimeInForce(string(enum.TimeInForce_GOOD_TILL_CANCEL)))
 }
 
 func queryOrderQty() field.OrderQtyField {
-	return field.NewOrderQty(queryDecimal("OrderQty"), 2)
+	//return field.NewOrderQty(queryDecimal("OrderQty"), 2)
+	val, err := decimal.NewFromString("100")
+	if err != nil {
+		panic(err)
+	}
+	return field.NewOrderQty(val, 2)
 }
 
 func queryPrice() field.PriceField {
-	return field.NewPrice(queryDecimal("Price"), 2)
+	//return field.NewPrice(queryDecimal("Price"), 2)
+	val, err := decimal.NewFromString("150")
+	if err != nil {
+		panic(err)
+	}
+	return field.NewPrice(val, 2)
 }
 
 func queryStopPx() field.StopPxField {
@@ -256,7 +282,7 @@ func queryHeader(h header) {
 
 func queryNewOrderSingle40() fix40nos.NewOrderSingle {
 	var ordType field.OrdTypeField
-	order := fix40nos.New(queryClOrdID(), field.NewHandlInst("1"), querySymbol(), querySide(), queryOrderQty(), queryOrdType(&ordType))
+	order := fix40nos.New(queryClOrdID(), field.NewHandlInst("1"), querySymbol(), querySide(true), queryOrderQty(), queryOrdType(&ordType))
 
 	switch ordType.Value() {
 	case enum.OrdType_LIMIT, enum.OrdType_STOP_LIMIT:
@@ -276,7 +302,7 @@ func queryNewOrderSingle40() fix40nos.NewOrderSingle {
 
 func queryNewOrderSingle41() (msg *quickfix.Message) {
 	var ordType field.OrdTypeField
-	order := fix41nos.New(queryClOrdID(), field.NewHandlInst("1"), querySymbol(), querySide(), queryOrdType(&ordType))
+	order := fix41nos.New(queryClOrdID(), field.NewHandlInst("1"), querySymbol(), querySide(true), queryOrdType(&ordType))
 	order.Set(queryOrderQty())
 
 	switch ordType.Value() {
@@ -298,7 +324,7 @@ func queryNewOrderSingle41() (msg *quickfix.Message) {
 
 func queryNewOrderSingle42() (msg *quickfix.Message) {
 	var ordType field.OrdTypeField
-	order := fix42nos.New(queryClOrdID(), field.NewHandlInst("1"), querySymbol(), querySide(), field.NewTransactTime(time.Now()), queryOrdType(&ordType))
+	order := fix42nos.New(queryClOrdID(), field.NewHandlInst("1"), querySymbol(), querySide(true), field.NewTransactTime(time.Now()), queryOrdType(&ordType))
 	order.Set(queryOrderQty())
 
 	switch ordType.Value() {
@@ -319,7 +345,7 @@ func queryNewOrderSingle42() (msg *quickfix.Message) {
 
 func queryNewOrderSingle43() (msg *quickfix.Message) {
 	var ordType field.OrdTypeField
-	order := fix43nos.New(queryClOrdID(), field.NewHandlInst("1"), querySide(), field.NewTransactTime(time.Now()), queryOrdType(&ordType))
+	order := fix43nos.New(queryClOrdID(), field.NewHandlInst("1"), querySide(true), field.NewTransactTime(time.Now()), queryOrdType(&ordType))
 	order.Set(querySymbol())
 	order.Set(queryOrderQty())
 
@@ -342,7 +368,7 @@ func queryNewOrderSingle43() (msg *quickfix.Message) {
 
 func queryNewOrderSingle44() (msg *quickfix.Message) {
 	var ordType field.OrdTypeField
-	order := fix44nos.New(queryClOrdID(), querySide(), field.NewTransactTime(time.Now()), queryOrdType(&ordType))
+	order := fix44nos.New(queryClOrdID(), querySide(true), field.NewTransactTime(time.Now()), queryOrdType(&ordType))
 	order.SetHandlInst("1")
 	order.Set(querySymbol())
 	order.Set(queryOrderQty())
@@ -364,9 +390,9 @@ func queryNewOrderSingle44() (msg *quickfix.Message) {
 	return
 }
 
-func queryNewOrderSingle50() (msg *quickfix.Message) {
+func queryNewOrderSingle50(bs bool) (msg *quickfix.Message) {
 	var ordType field.OrdTypeField
-	order := fix50nos.New(queryClOrdID(), querySide(), field.NewTransactTime(time.Now()), queryOrdType(&ordType))
+	order := fix50nos.New(queryClOrdID(), querySide(bs), field.NewTransactTime(time.Now()), queryOrdType(&ordType))
 	order.SetHandlInst("1")
 	order.Set(querySymbol())
 	order.Set(queryOrderQty())
@@ -389,14 +415,14 @@ func queryNewOrderSingle50() (msg *quickfix.Message) {
 }
 
 func queryOrderCancelRequest40() (msg *quickfix.Message) {
-	cancel := fix40cxl.New(queryOrigClOrdID(), queryClOrdID(), field.NewCxlType("F"), querySymbol(), querySide(), queryOrderQty())
+	cancel := fix40cxl.New(queryOrigClOrdID(), queryClOrdID(), field.NewCxlType("F"), querySymbol(), querySide(true), queryOrderQty())
 	msg = cancel.ToMessage()
 	queryHeader(&msg.Header)
 	return
 }
 
 func queryOrderCancelRequest41() (msg *quickfix.Message) {
-	cancel := fix41cxl.New(queryOrigClOrdID(), queryClOrdID(), querySymbol(), querySide())
+	cancel := fix41cxl.New(queryOrigClOrdID(), queryClOrdID(), querySymbol(), querySide(true))
 	cancel.Set(queryOrderQty())
 	msg = cancel.ToMessage()
 	queryHeader(&msg.Header)
@@ -404,7 +430,7 @@ func queryOrderCancelRequest41() (msg *quickfix.Message) {
 }
 
 func queryOrderCancelRequest42() (msg *quickfix.Message) {
-	cancel := fix42cxl.New(queryOrigClOrdID(), queryClOrdID(), querySymbol(), querySide(), field.NewTransactTime(time.Now()))
+	cancel := fix42cxl.New(queryOrigClOrdID(), queryClOrdID(), querySymbol(), querySide(true), field.NewTransactTime(time.Now()))
 	cancel.Set(queryOrderQty())
 	msg = cancel.ToMessage()
 	queryHeader(&msg.Header)
@@ -412,7 +438,7 @@ func queryOrderCancelRequest42() (msg *quickfix.Message) {
 }
 
 func queryOrderCancelRequest43() (msg *quickfix.Message) {
-	cancel := fix43cxl.New(queryOrigClOrdID(), queryClOrdID(), querySide(), field.NewTransactTime(time.Now()))
+	cancel := fix43cxl.New(queryOrigClOrdID(), queryClOrdID(), querySide(true), field.NewTransactTime(time.Now()))
 	cancel.Set(querySymbol())
 	cancel.Set(queryOrderQty())
 	msg = cancel.ToMessage()
@@ -421,7 +447,7 @@ func queryOrderCancelRequest43() (msg *quickfix.Message) {
 }
 
 func queryOrderCancelRequest44() (msg *quickfix.Message) {
-	cancel := fix44cxl.New(queryOrigClOrdID(), queryClOrdID(), querySide(), field.NewTransactTime(time.Now()))
+	cancel := fix44cxl.New(queryOrigClOrdID(), queryClOrdID(), querySide(true), field.NewTransactTime(time.Now()))
 	cancel.Set(querySymbol())
 	cancel.Set(queryOrderQty())
 
@@ -431,7 +457,7 @@ func queryOrderCancelRequest44() (msg *quickfix.Message) {
 }
 
 func queryOrderCancelRequest50() (msg *quickfix.Message) {
-	cancel := fix50cxl.New(queryOrigClOrdID(), queryClOrdID(), querySide(), field.NewTransactTime(time.Now()))
+	cancel := fix50cxl.New(queryOrigClOrdID(), queryClOrdID(), querySide(true), field.NewTransactTime(time.Now()))
 	cancel.Set(querySymbol())
 	cancel.Set(queryOrderQty())
 	msg = cancel.ToMessage()
@@ -512,6 +538,7 @@ func queryMarketDataRequest50() fix50mdr.MarketDataRequest {
 }
 
 func QueryEnterOrder() (err error) {
+	fmt.Println("HERE")
 	defer func() {
 		if e := recover(); e != nil {
 			err = e.(error)
@@ -542,7 +569,8 @@ func QueryEnterOrder() (err error) {
 		order = queryNewOrderSingle44()
 
 	case quickfix.BeginStringFIXT11:
-		order = queryNewOrderSingle50()
+		fmt.Println("HERE")
+		order = queryNewOrderSingle50(true)
 	}
 
 	return quickfix.Send(order)
